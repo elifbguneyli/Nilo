@@ -14,6 +14,7 @@ export function StarShop() {
   const navigate = useNavigate()
   const [justPurchased, setJustPurchased] = useState<ShopItem | null>(null)
   const [shakeItemId, setShakeItemId] = useState<string | null>(null)
+  const [notEnoughId, setNotEnoughId] = useState<string | null>(null)
 
   const child = children.find((c) => c.id === childId)
   if (!child) return <Navigate to="/" replace />
@@ -28,6 +29,8 @@ export function StarShop() {
     } else if (result.reason === 'insufficient-balance') {
       setShakeItemId(item.id)
       setTimeout(() => setShakeItemId(null), 500)
+      setNotEnoughId(item.id)
+      setTimeout(() => setNotEnoughId(null), 1600)
     }
   }
 
@@ -65,6 +68,7 @@ export function StarShop() {
                     item={item}
                     progress={progress}
                     shaking={shakeItemId === item.id}
+                    showNotEnough={notEnoughId === item.id}
                     onBuy={() => handleBuy(item)}
                   />
                 ))}
@@ -104,23 +108,29 @@ function ShopItemCard({
   item,
   progress,
   shaking,
+  showNotEnough,
   onBuy,
 }: {
   item: ShopItem
   progress: ChildProgress
   shaking: boolean
+  showNotEnough: boolean
   onBuy: () => void
 }) {
   const owned = progress.purchasedItemIds.includes(item.id)
   const affordable = progress.starBalance >= item.price
   const missing = item.price - progress.starBalance
+  const isSpecial = item.category === 'decoration'
 
   return (
     <motion.div
-      className="flex flex-col items-center gap-2 rounded-3xl bg-white p-4 text-center shadow-sm"
+      className={`flex flex-col items-center gap-2 rounded-3xl bg-white p-4 text-center shadow-sm ${
+        isSpecial ? 'border-2 border-sun-400' : ''
+      }`}
       animate={shaking ? { x: [0, -6, 6, -6, 0] } : undefined}
       transition={{ duration: 0.4 }}
     >
+      {isSpecial && <span className="font-body text-[10px] font-extrabold text-sun-500">✨ ÖZEL</span>}
       <span className="text-4xl">{item.emoji}</span>
       <span className="font-heading font-bold text-slate-700">{item.name}</span>
       <span className="flex items-center gap-1 font-body text-sm font-semibold text-slate-500">
@@ -135,15 +145,20 @@ function ShopItemCard({
         <>
           <button
             onClick={onBuy}
-            disabled={!affordable}
             className={`w-full rounded-full px-4 py-2 font-heading text-sm font-bold text-white transition active:scale-95 ${
               affordable ? 'bg-coral-500 shadow-md shadow-coral-500/30' : 'bg-slate-300'
             }`}
           >
             Satın Al
           </button>
-          {!affordable && (
-            <span className="font-body text-xs text-slate-400">{missing} yıldız daha lazım</span>
+          {showNotEnough ? (
+            <span className="font-body text-xs font-bold text-coral-500">
+              Yeterli yıldızın yok 😊
+            </span>
+          ) : (
+            !affordable && (
+              <span className="font-body text-xs text-slate-400">{missing} yıldız daha lazım</span>
+            )
           )}
         </>
       )}

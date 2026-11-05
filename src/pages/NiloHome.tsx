@@ -55,31 +55,55 @@ export function NiloHome() {
 
       <h1 className="font-heading text-2xl font-extrabold text-slate-700">Nilo'nun Evi 🏡</h1>
 
-      <div className="relative flex w-full max-w-md flex-col items-center gap-6 rounded-[2rem] bg-gradient-to-b from-mint-100 to-mint-50 p-6 shadow-inner">
-        <Mascot mood="happy" size={150} hatEmoji={equippedHat?.emoji} glassesEmoji={equippedGlasses?.emoji} />
+      <div className="flex w-full max-w-md flex-col items-center">
+        {/* Roof */}
+        <div
+          className="h-0 w-0"
+          style={{
+            borderLeft: '95px solid transparent',
+            borderRight: '95px solid transparent',
+            borderBottom: '46px solid var(--color-coral-400)',
+          }}
+          aria-hidden
+        />
+        {/* Walls */}
+        <div className="relative flex w-full flex-col items-center gap-6 rounded-b-[2rem] border-x-8 border-b-8 border-coral-400/40 bg-gradient-to-b from-mint-100 to-mint-50 p-6 pt-8 shadow-inner">
+          <span className="absolute left-4 top-4 text-xl" aria-hidden>
+            🪟
+          </span>
+          <span className="absolute right-4 top-4 text-xl" aria-hidden>
+            🪟
+          </span>
 
-        <div className="grid w-full grid-cols-4 gap-3">
-          {decorSlots.map((item, i) =>
-            item ? (
-              <button
-                key={item.id}
-                onClick={() => handleToggle(item.id)}
-                aria-label={`${item.name} eşyasını odadan kaldır`}
-                className="flex aspect-square flex-col items-center justify-center rounded-2xl bg-white text-3xl shadow-md transition active:scale-90"
-              >
-                {item.emoji}
-              </button>
-            ) : (
-              <div
-                key={`empty-${i}`}
-                className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-mint-300 text-mint-300"
-                aria-hidden
-              >
-                +
-              </div>
-            ),
-          )}
+          <Mascot mood="happy" size={150} hatEmoji={equippedHat?.emoji} glassesEmoji={equippedGlasses?.emoji} />
+
+          <div className="grid w-full grid-cols-4 gap-3">
+            {decorSlots.map((item, i) =>
+              item ? (
+                <button
+                  key={item.id}
+                  onClick={() => handleToggle(item.id)}
+                  aria-label={`${item.name} eşyasını odadan kaldır`}
+                  className={`flex aspect-square flex-col items-center justify-center rounded-2xl bg-white text-3xl shadow-md transition active:scale-90 ${
+                    item.category === 'decoration' ? 'ring-4 ring-sun-400' : ''
+                  }`}
+                >
+                  {item.emoji}
+                </button>
+              ) : (
+                <div
+                  key={`empty-${i}`}
+                  className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-mint-300 text-mint-300"
+                  aria-hidden
+                >
+                  +
+                </div>
+              ),
+            )}
+          </div>
         </div>
+        {/* Doorstep */}
+        <div className="h-3 w-2/3 rounded-b-xl bg-coral-400/40" aria-hidden />
       </div>
 
       <div className="flex w-full max-w-md flex-col gap-3">
@@ -101,7 +125,7 @@ export function NiloHome() {
                   onClick={() => handleToggle(item.id)}
                   className={`flex flex-col items-center gap-1 rounded-2xl p-3 shadow-sm transition active:scale-95 ${
                     placed ? 'bg-mint-400 text-white' : 'bg-white text-slate-700'
-                  }`}
+                  } ${item.category === 'decoration' ? 'ring-2 ring-sun-400' : ''}`}
                 >
                   <span className="text-2xl">{item.emoji}</span>
                   <span className="truncate font-body text-xs font-bold">{item.name}</span>
