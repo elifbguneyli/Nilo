@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useChildren } from '../context/ChildrenContext'
 import { Mascot } from '../components/Mascot'
 import { StarBurst } from '../components/StarBurst'
+import { ToothShine } from '../components/ToothShine'
 import { BADGES } from '../lib/badges'
 import type { BrushSession } from '../types'
 
@@ -32,7 +34,18 @@ export function Brush() {
   const [secondsLeft, setSecondsLeft] = useState(ZONE_SECONDS)
   const [paused, setPaused] = useState(false)
   const [result, setResult] = useState<{ stars: number; badges: string[] } | null>(null)
+  const [zoneCelebration, setZoneCelebration] = useState(false)
   const finishedRef = useRef(false)
+  const prevZoneRef = useRef(0)
+
+  useEffect(() => {
+    if (zoneIndex !== prevZoneRef.current) {
+      prevZoneRef.current = zoneIndex
+      setZoneCelebration(true)
+      const timeout = setTimeout(() => setZoneCelebration(false), 700)
+      return () => clearTimeout(timeout)
+    }
+  }, [zoneIndex])
 
   useEffect(() => {
     if (phase !== 'brushing' || paused) return
@@ -96,8 +109,9 @@ export function Brush() {
 
   if (phase === 'brushing') {
     const zone = ZONES[zoneIndex]
+    const zoneProgress = (ZONE_SECONDS - secondsLeft) / ZONE_SECONDS
     return (
-      <div className="flex min-h-screen flex-col items-center gap-6 px-6 py-8">
+      <div className="relative flex min-h-screen flex-col items-center gap-6 px-6 py-8">
         <div className="h-3 w-full max-w-md overflow-hidden rounded-full bg-mint-100">
           <div
             className="h-full rounded-full bg-mint-400 transition-all duration-500"
@@ -110,13 +124,15 @@ export function Brush() {
         </p>
 
         <div className="relative flex flex-col items-center gap-2">
-          <Mascot mood="excited" size={150} />
+          <Mascot mood="excited" size={130} />
         </div>
 
         <div className="flex items-center gap-3 rounded-3xl bg-white px-6 py-4 shadow-md">
           <span className="text-3xl">{zone.icon}</span>
           <h2 className="font-heading text-2xl font-bold text-slate-700">{zone.label}</h2>
         </div>
+
+        <ToothShine progress={zoneProgress} />
 
         <TimerRing seconds={secondsLeft} total={ZONE_SECONDS} />
 
@@ -126,6 +142,21 @@ export function Brush() {
         >
           {paused ? '▶️ Devam Et' : '⏸️ Duraklat'}
         </button>
+
+        <AnimatePresence>
+          {zoneCelebration && (
+            <motion.div
+              className="pointer-events-none absolute top-24 left-1/2 flex items-center gap-2 rounded-full bg-sun-300 px-5 py-2 shadow-md"
+              initial={{ opacity: 0, y: 10, x: '-50%' }}
+              animate={{ opacity: 1, y: -10, x: '-50%' }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <span className="text-xl">✨</span>
+              <span className="font-heading font-bold text-slate-700">Süper gidiyorsun!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     )
   }
@@ -164,8 +195,22 @@ export function Brush() {
         onClick={() => navigate(`/home/${child.id}`)}
         className="mt-2 rounded-full bg-mint-400 px-10 py-4 font-heading text-xl font-bold text-white shadow-lg shadow-mint-400/30 transition active:scale-95"
       >
-        Eve Dön 🏠
+        Ana Sayfaya Dön 🏠
       </button>
+      <div className="flex gap-3">
+        <button
+          onClick={() => navigate(`/room/${child.id}`)}
+          className="rounded-full bg-grape-400 px-5 py-3 font-heading font-bold text-white shadow-md shadow-grape-400/30 transition active:scale-95"
+        >
+          Nilo'nun Evi 🏡
+        </button>
+        <button
+          onClick={() => navigate(`/shop/${child.id}`)}
+          className="rounded-full bg-coral-500 px-5 py-3 font-heading font-bold text-white shadow-md shadow-coral-500/30 transition active:scale-95"
+        >
+          Yıldız Mağazası 🛍️
+        </button>
+      </div>
     </div>
   )
 }

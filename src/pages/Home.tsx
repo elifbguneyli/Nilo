@@ -27,10 +27,13 @@ export function Home() {
         >
           ← Profiller
         </button>
-        <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
+        <button
+          onClick={() => navigate(`/shop/${child.id}`)}
+          className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm transition active:scale-95"
+        >
           <span className="text-xl">⭐</span>
-          <span className="font-heading text-lg font-bold text-slate-700">{progress.totalStars}</span>
-        </div>
+          <span className="font-heading text-lg font-bold text-slate-700">{progress.starBalance}</span>
+        </button>
       </div>
 
       <ChildAvatar avatar={child.avatar} color={child.color} size={88} />
@@ -58,12 +61,26 @@ export function Home() {
         />
       </div>
 
-      <button
-        onClick={() => navigate(`/rewards/${child.id}`)}
-        className="mt-2 rounded-full bg-grape-400 px-8 py-3 font-heading text-lg font-bold text-white shadow-md shadow-grape-400/30 transition active:scale-95"
-      >
-        🏆 Ödüllerim
-      </button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <button
+          onClick={() => navigate(`/room/${child.id}`)}
+          className="rounded-full bg-mint-500 px-6 py-3 font-heading text-lg font-bold text-white shadow-md shadow-mint-500/30 transition active:scale-95"
+        >
+          🏡 Nilo'nun Evi
+        </button>
+        <button
+          onClick={() => navigate(`/shop/${child.id}`)}
+          className="rounded-full bg-coral-500 px-6 py-3 font-heading text-lg font-bold text-white shadow-md shadow-coral-500/30 transition active:scale-95"
+        >
+          🛍️ Mağaza
+        </button>
+        <button
+          onClick={() => navigate(`/rewards/${child.id}`)}
+          className="rounded-full bg-grape-400 px-6 py-3 font-heading text-lg font-bold text-white shadow-md shadow-grape-400/30 transition active:scale-95"
+        >
+          🏆 Ödüllerim
+        </button>
+      </div>
     </div>
   )
 }

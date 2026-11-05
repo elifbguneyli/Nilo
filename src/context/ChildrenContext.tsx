@@ -6,10 +6,14 @@ import {
   saveAllProgress,
   saveChildren,
 } from '../lib/storage'
-import { emptyProgress } from '../lib/progress'
+import { emptyProgress, migrateProgress } from '../lib/progress'
 import { todayKey } from '../lib/date'
 import { BADGES } from '../lib/badges'
 import { calcStreak, calcTotalSessions } from '../lib/progress'
+import { findShopItem, isWearableCategory, ROOM_DECOR_SLOTS } from '../lib/shopItems'
+
+export type PurchaseFailureReason = 'not-found' | 'already-owned' | 'insufficient-balance'
+export type ToggleFailureReason = 'not-owned' | 'room-full'
 
 interface ChildrenContextValue {
   children: Child[]
@@ -18,6 +22,14 @@ interface ChildrenContextValue {
   removeChild: (id: string) => void
   getProgress: (childId: string) => ChildProgress
   completeSession: (childId: string, session: BrushSession) => { starsEarned: number; newBadgeIds: string[] }
+  purchaseItem: (
+    childId: string,
+    itemId: string,
+  ) => { success: boolean; reason?: PurchaseFailureReason }
+  togglePlacedItem: (
+    childId: string,
+    itemId: string,
+  ) => { success: boolean; reason?: ToggleFailureReason }
 }
 
 const ChildrenContext = createContext<ChildrenContextValue | null>(null)
@@ -30,9 +42,18 @@ export function pickAvatarColor(index: number): string {
 
 export function ChildrenProvider({ children: reactChildren }: { children: ReactNode }) {
   const [childList, setChildList] = useState<Child[]>(() => loadChildren())
-  const [progressByChild, setProgressByChild] = useState<Record<string, ChildProgress>>(() =>
-    loadAllProgress(),
-  )
+  const [progressByChild, setProgressByChild] = useState<Record<string, ChildProgress>>(() => {
+    const raw = loadAllProgress()
+    const migrated: Record<string, ChildProgress> = {}
+    let anyMigrated = false
+    for (const [id, value] of Object.entries(raw)) {
+      const { progress, wasMigrated } = migrateProgress(value)
+      migrated[id] = progress
+      anyMigrated = anyMigrated || wasMigrated
+    }
+    if (anyMigrated) saveAllProgress(migrated)
+    return migrated
+  })
 
   function addChild(name: string, avatar: string, color: string): Child {
     const child: Child = {
@@ -79,6 +100,7 @@ export function ChildrenProvider({ children: reactChildren }: { children: ReactN
       ...current,
       history: { ...current.history, [key]: updatedDay },
       totalStars: current.totalStars + starsEarned,
+      starBalance: current.starBalance + starsEarned,
     }
 
     const streak = calcStreak(updatedProgress)
@@ -101,6 +123,65 @@ export function ChildrenProvider({ children: reactChildren }: { children: ReactN
     return { starsEarned, newBadgeIds: newlyUnlocked }
   }
 
+  function purchaseItem(childId: string, itemId: string) {
+    const item = findShopItem(itemId)
+    if (!item) {
+      return { success: false, reason: 'not-found' as const }
+    }
+    const current = progressByChild[childId] ?? emptyProgress()
+    if (current.purchasedItemIds.includes(itemId)) {
+      return { success: false, reason: 'already-owned' as const }
+    }
+    if (current.starBalance < item.price) {
+      return { success: false, reason: 'insufficient-balance' as const }
+    }
+    const updated: ChildProgress = {
+      ...current,
+      starBalance: current.starBalance - item.price,
+      purchasedItemIds: [...current.purchasedItemIds, itemId],
+    }
+    const nextAll = { ...progressByChild, [childId]: updated }
+    setProgressByChild(nextAll)
+    saveAllProgress(nextAll)
+    return { success: true }
+  }
+
+  function togglePlacedItem(childId: string, itemId: string) {
+    const item = findShopItem(itemId)
+    const current = progressByChild[childId] ?? emptyProgress()
+    if (!item || !current.purchasedItemIds.includes(itemId)) {
+      return { success: false, reason: 'not-owned' as const }
+    }
+
+    const isPlaced = current.placedItemIds.includes(itemId)
+    let nextPlaced: string[]
+
+    if (isPlaced) {
+      nextPlaced = current.placedItemIds.filter((id) => id !== itemId)
+    } else if (isWearableCategory(item.category)) {
+      // Only one hat and one pair of glasses can be worn at a time.
+      nextPlaced = [
+        ...current.placedItemIds.filter((id) => findShopItem(id)?.category !== item.category),
+        itemId,
+      ]
+    } else {
+      const placedDecorCount = current.placedItemIds.filter((id) => {
+        const other = findShopItem(id)
+        return other && !isWearableCategory(other.category)
+      }).length
+      if (placedDecorCount >= ROOM_DECOR_SLOTS) {
+        return { success: false, reason: 'room-full' as const }
+      }
+      nextPlaced = [...current.placedItemIds, itemId]
+    }
+
+    const updated: ChildProgress = { ...current, placedItemIds: nextPlaced }
+    const nextAll = { ...progressByChild, [childId]: updated }
+    setProgressByChild(nextAll)
+    saveAllProgress(nextAll)
+    return { success: true }
+  }
+
   const value = useMemo<ChildrenContextValue>(
     () => ({
       children: childList,
@@ -109,6 +190,8 @@ export function ChildrenProvider({ children: reactChildren }: { children: ReactN
       removeChild,
       getProgress,
       completeSession,
+      purchaseItem,
+      togglePlacedItem,
     }),
     [childList, progressByChild],
   )

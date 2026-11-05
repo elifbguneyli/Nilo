@@ -30,5 +30,38 @@ export function calcTotalSessions(progress: ChildProgress): number {
 }
 
 export function emptyProgress(): ChildProgress {
-  return { history: {}, totalStars: 0, unlockedBadgeIds: [] }
+  return {
+    history: {},
+    totalStars: 0,
+    starBalance: 0,
+    unlockedBadgeIds: [],
+    purchasedItemIds: [],
+    placedItemIds: [],
+  }
+}
+
+/**
+ * Fills in fields missing from progress saved before the star-shop feature existed.
+ * Existing users get a starBalance equal to their lifetime totalStars, exactly once —
+ * `wasMigrated` tells the caller whether this record actually needed that one-time fill
+ * so it can persist the result and never re-run it on a later load.
+ */
+export function migrateProgress(raw: Partial<ChildProgress> | undefined): {
+  progress: ChildProgress
+  wasMigrated: boolean
+} {
+  const totalStars = raw?.totalStars ?? 0
+  const existingBalance = raw?.starBalance
+  const hadBalance = typeof existingBalance === 'number'
+  return {
+    progress: {
+      history: raw?.history ?? {},
+      totalStars,
+      starBalance: hadBalance ? existingBalance : totalStars,
+      unlockedBadgeIds: raw?.unlockedBadgeIds ?? [],
+      purchasedItemIds: raw?.purchasedItemIds ?? [],
+      placedItemIds: raw?.placedItemIds ?? [],
+    },
+    wasMigrated: !hadBalance,
+  }
 }

@@ -2,13 +2,30 @@ import { motion } from 'framer-motion'
 
 type Mood = 'idle' | 'happy' | 'excited' | 'sleepy'
 
-export function Mascot({ mood = 'idle', size = 140 }: { mood?: Mood; size?: number }) {
+interface MascotProps {
+  mood?: Mood
+  size?: number
+  /** Optional emoji rendered above Nilo's head, e.g. a purchased hat. */
+  hatEmoji?: string
+  /** Optional emoji rendered over Nilo's eyes, e.g. purchased glasses. */
+  glassesEmoji?: string
+  /** Whether Nilo occasionally blinks. Defaults to true; disabled while sleepy (eyes already closed). */
+  blinking?: boolean
+}
+
+export function Mascot({
+  mood = 'idle',
+  size = 140,
+  hatEmoji,
+  glassesEmoji,
+  blinking = true,
+}: MascotProps) {
   const eyesClosed = mood === 'sleepy'
   const bigSmile = mood === 'happy' || mood === 'excited'
 
   return (
     <motion.div
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, position: 'relative' }}
       animate={
         mood === 'excited'
           ? { y: [0, -14, 0], rotate: [-4, 4, -4] }
@@ -36,10 +53,18 @@ export function Mascot({ mood = 'idle', size = 140 }: { mood?: Mood; size?: numb
             <path d="M68 50q6-6 12 0" stroke="#1f2a37" strokeWidth="3" fill="none" strokeLinecap="round" />
           </>
         ) : (
-          <>
+          <motion.g
+            style={{ originX: 0.5, originY: 0.5 }}
+            animate={blinking ? { scaleY: [1, 1, 0.1, 1] } : undefined}
+            transition={
+              blinking
+                ? { duration: 3, repeat: Infinity, repeatDelay: 2.4, times: [0, 0.9, 0.95, 1], ease: 'easeInOut' }
+                : undefined
+            }
+          >
             <circle cx="46" cy="50" r="4.5" fill="#1f2a37" />
             <circle cx="74" cy="50" r="4.5" fill="#1f2a37" />
-          </>
+          </motion.g>
         )}
         <circle cx="33" cy="60" r="6" fill="#ff9170" opacity="0.5" />
         <circle cx="87" cy="60" r="6" fill="#ff9170" opacity="0.5" />
@@ -55,6 +80,22 @@ export function Mascot({ mood = 'idle', size = 140 }: { mood?: Mood; size?: numb
           <path d="M48 66q12 8 24 0" stroke="#1f2a37" strokeWidth="3.5" fill="none" strokeLinecap="round" />
         )}
       </svg>
+      {glassesEmoji && (
+        <span
+          className="absolute left-1/2"
+          style={{ top: size * 0.34, transform: 'translateX(-50%)', fontSize: size * 0.28 }}
+        >
+          {glassesEmoji}
+        </span>
+      )}
+      {hatEmoji && (
+        <span
+          className="absolute left-1/2"
+          style={{ top: size * -0.1, transform: 'translateX(-50%)', fontSize: size * 0.4 }}
+        >
+          {hatEmoji}
+        </span>
+      )}
     </motion.div>
   )
 }

@@ -22,9 +22,11 @@ export function Rewards() {
         >
           ← Geri
         </button>
-        <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
-          <span className="text-xl">⭐</span>
-          <span className="font-heading text-lg font-bold text-slate-700">{progress.totalStars}</span>
+        <div className="flex flex-col items-center gap-1 rounded-2xl bg-white px-4 py-2 shadow-sm">
+          <span className="flex items-center gap-1 font-heading text-lg font-bold text-slate-700">
+            ⭐ {progress.totalStars}
+          </span>
+          <span className="font-body text-[10px] text-slate-400">toplam kazanılan</span>
         </div>
       </div>
 

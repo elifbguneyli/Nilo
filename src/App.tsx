@@ -6,6 +6,8 @@ import { Home } from './pages/Home'
 import { Brush } from './pages/Brush'
 import { Rewards } from './pages/Rewards'
 import { Parent } from './pages/Parent'
+import { NiloHome } from './pages/NiloHome'
+import { StarShop } from './pages/StarShop'
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/home/:childId" element={<Home />} />
         <Route path="/brush/:childId/:session" element={<Brush />} />
         <Route path="/rewards/:childId" element={<Rewards />} />
+        <Route path="/room/:childId" element={<NiloHome />} />
+        <Route path="/shop/:childId" element={<StarShop />} />
         <Route path="/parent" element={<Parent />} />
       </Routes>
     </ChildrenProvider>

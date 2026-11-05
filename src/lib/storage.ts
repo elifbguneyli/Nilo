@@ -17,10 +17,14 @@ export function saveChildren(children: Child[]): void {
   localStorage.setItem(CHILDREN_KEY, JSON.stringify(children))
 }
 
-export function loadAllProgress(): Record<string, ChildProgress> {
+/**
+ * Returns raw saved progress, which may predate fields added after a user's first save
+ * (e.g. starBalance). Callers should run each entry through migrateProgress before use.
+ */
+export function loadAllProgress(): Record<string, Partial<ChildProgress>> {
   try {
     const raw = localStorage.getItem(PROGRESS_KEY)
-    return raw ? (JSON.parse(raw) as Record<string, ChildProgress>) : {}
+    return raw ? (JSON.parse(raw) as Record<string, Partial<ChildProgress>>) : {}
   } catch {
     return {}
   }
