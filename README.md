@@ -35,3 +35,10 @@ npm run dev      # geliştirme sunucusu
 npm run build    # production build
 npm run lint      # lint kontrolü
 ```
+
+## Netlify'a Dağıtım
+
+Repo kökünde `netlify.toml` zaten yapılandırılmış: build komutu `npm run build`, yayın klasörü
+`dist`, ve React Router'ın istemci taraflı rotalarının çalışması için tüm istekleri
+`index.html`'e yönlendiren bir SPA kuralı içerir. Netlify'da "New site from Git" ile bu repoyu
+bağlamak yeterlidir, ekstra ayar gerekmez.
