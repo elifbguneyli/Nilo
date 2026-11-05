@@ -1,0 +1,58 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-heading: 'Baloo 2', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  --color-mint-50: #eafffb;
+  --color-mint-100: #c7fff2;
+  --color-mint-200: #8ff5e4;
+  --color-mint-300: #52e3cd;
+  --color-mint-400: #2fd4c0;
+  --color-mint-500: #1cb8a6;
+  --color-mint-600: #159386;
+
+  --color-coral-300: #ffb199;
+  --color-coral-400: #ff9170;
+  --color-coral-500: #ff7a52;
+
+  --color-sun-300: #ffe08a;
+  --color-sun-400: #ffd159;
+  --color-sun-500: #ffbf2e;
+
+  --color-grape-400: #9b7bff;
+  --color-grape-500: #7f5af0;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(180deg, #eafffb 0%, #f2fffb 40%, #ffffff 100%);
+  color: #1f2a37;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+button {
+  font-family: inherit;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
