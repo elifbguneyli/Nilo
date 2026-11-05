@@ -22,6 +22,8 @@ interface ChildrenContextValue {
   removeChild: (id: string) => void
   getProgress: (childId: string) => ChildProgress
   completeSession: (childId: string, session: BrushSession) => { starsEarned: number; newBadgeIds: string[] }
+  /** Test/QA helper: grants bonus stars without requiring a real brushing session. */
+  addTestStars: (childId: string, amount: number) => void
   purchaseItem: (
     childId: string,
     itemId: string,
@@ -123,6 +125,32 @@ export function ChildrenProvider({ children: reactChildren }: { children: ReactN
     return { starsEarned, newBadgeIds: newlyUnlocked }
   }
 
+  function addTestStars(childId: string, amount: number) {
+    const current = progressByChild[childId] ?? emptyProgress()
+    const updatedProgress: ChildProgress = {
+      ...current,
+      totalStars: current.totalStars + amount,
+      starBalance: current.starBalance + amount,
+    }
+
+    const streak = calcStreak(updatedProgress)
+    const totalSessions = calcTotalSessions(updatedProgress)
+    const newlyUnlocked = BADGES.filter(
+      (badge) =>
+        !updatedProgress.unlockedBadgeIds.includes(badge.id) &&
+        badge.requirement({ streak, totalStars: updatedProgress.totalStars, totalSessions }),
+    ).map((b) => b.id)
+
+    const finalProgress: ChildProgress = {
+      ...updatedProgress,
+      unlockedBadgeIds: [...updatedProgress.unlockedBadgeIds, ...newlyUnlocked],
+    }
+
+    const nextAll = { ...progressByChild, [childId]: finalProgress }
+    setProgressByChild(nextAll)
+    saveAllProgress(nextAll)
+  }
+
   function purchaseItem(childId: string, itemId: string) {
     const item = findShopItem(itemId)
     if (!item) {
@@ -190,6 +218,7 @@ export function ChildrenProvider({ children: reactChildren }: { children: ReactN
       removeChild,
       getProgress,
       completeSession,
+      addTestStars,
       purchaseItem,
       togglePlacedItem,
     }),

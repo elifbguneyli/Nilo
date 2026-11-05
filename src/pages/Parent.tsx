@@ -64,7 +64,7 @@ export function Parent() {
 }
 
 function ParentDashboard({ onBack }: { onBack: () => void }) {
-  const { children, getProgress, removeChild } = useChildren()
+  const { children, getProgress, removeChild, addTestStars } = useChildren()
   const days = useMemo(() => lastNDays(7), [])
 
   return (
@@ -79,6 +79,14 @@ function ParentDashboard({ onBack }: { onBack: () => void }) {
       {children.length === 0 && (
         <p className="font-body text-slate-500">Henüz bir çocuk profili eklenmedi.</p>
       )}
+
+      <div className="w-full max-w-lg rounded-2xl border-2 border-dashed border-grape-400/40 bg-grape-400/5 p-4">
+        <p className="font-body text-xs font-semibold text-grape-500">
+          🧪 Test aracı — sadece geliştirme/deneme amaçlı. Gerçek kullanıcıların yıldız kazanması
+          hâlâ fırçalama yaparak olur; bu buton sadece Nilo'nun Evi ve Mağaza'yı hızlıca
+          deneyebilmen için.
+        </p>
+      </div>
 
       <div className="flex w-full max-w-lg flex-col gap-5">
         {children.map((child) => {
@@ -96,16 +104,24 @@ function ParentDashboard({ onBack }: { onBack: () => void }) {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm(`${child.name} profilini silmek istediğine emin misin? Tüm ilerleme silinecek.`)) {
-                      removeChild(child.id)
-                    }
-                  }}
-                  className="font-body text-xs font-semibold text-coral-500 underline"
-                >
-                  Sil
-                </button>
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    onClick={() => addTestStars(child.id, 50)}
+                    className="rounded-full bg-grape-400 px-3 py-1.5 font-body text-xs font-bold text-white shadow-sm transition active:scale-95"
+                  >
+                    🧪 +50 Yıldız
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`${child.name} profilini silmek istediğine emin misin? Tüm ilerleme silinecek.`)) {
+                        removeChild(child.id)
+                      }
+                    }}
+                    className="font-body text-xs font-semibold text-coral-500 underline"
+                  >
+                    Sil
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 flex justify-between gap-1">
