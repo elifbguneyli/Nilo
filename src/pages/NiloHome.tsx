@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useRef, useState } from 'react'
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useChildren } from '../context/ChildrenContext'
 import { Mascot } from '../components/Mascot'
@@ -10,6 +10,9 @@ export function NiloHome() {
   const { children, getProgress, togglePlacedItem } = useChildren()
   const navigate = useNavigate()
   const [toast, setToast] = useState<string | null>(null)
+  const [niloMood, setNiloMood] = useState<'happy' | 'excited'>('happy')
+  const [isDraggingItem, setIsDraggingItem] = useState(false)
+  const roomRef = useRef<HTMLDivElement>(null)
 
   const child = children.find((c) => c.id === childId)
   if (!child) return <Navigate to="/" replace />
@@ -36,6 +39,32 @@ export function NiloHome() {
     }
   }
 
+  const handleDragEnd = (
+    item: ShopItem,
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
+    setIsDraggingItem(false)
+    const roomEl = roomRef.current
+    if (!roomEl) return
+    const rect = roomEl.getBoundingClientRect()
+    // getBoundingClientRect() is viewport-relative, so prefer the event's own
+    // clientX/Y (same coordinate space) over info.point, which some browsers
+    // report relative to the full page and would drift once the page scrolls.
+    const point = 'clientX' in event ? { x: event.clientX, y: event.clientY } : info.point
+    const droppedOnRoom =
+      point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
+    const alreadyPlaced = progress.placedItemIds.includes(item.id)
+    if (droppedOnRoom && !alreadyPlaced) {
+      handleToggle(item.id)
+    }
+  }
+
+  function pokeNilo() {
+    setNiloMood('excited')
+    setTimeout(() => setNiloMood('happy'), 900)
+  }
+
   const decorSlots = Array.from({ length: ROOM_DECOR_SLOTS }, (_, i) => placedDecor[i] ?? null)
 
   return (
@@ -54,6 +83,9 @@ export function NiloHome() {
       </div>
 
       <h1 className="font-heading text-2xl font-extrabold text-slate-700">Nilo'nun Evi 🏡</h1>
+      <p className="-mt-3 font-body text-xs text-slate-400">
+        Nilo'ya dokun, eşyaları odaya sürükle ya da dokunup yerleştir!
+      </p>
 
       <div className="flex w-full max-w-md flex-col items-center">
         {/* Roof */}
@@ -66,8 +98,13 @@ export function NiloHome() {
           }}
           aria-hidden
         />
-        {/* Walls */}
-        <div className="relative flex w-full flex-col items-center gap-6 rounded-b-[2rem] border-x-8 border-b-8 border-coral-400/40 bg-gradient-to-b from-mint-100 to-mint-50 p-6 pt-8 shadow-inner">
+        {/* Walls + floor */}
+        <div
+          ref={roomRef}
+          className={`relative flex w-full flex-col items-center gap-6 rounded-b-[2rem] border-x-8 border-b-8 bg-gradient-to-b from-mint-100 to-mint-50 p-6 pt-8 shadow-inner transition-colors ${
+            isDraggingItem ? 'border-sun-400 ring-4 ring-sun-300' : 'border-coral-400/40'
+          }`}
+        >
           <span className="absolute left-4 top-4 text-xl" aria-hidden>
             🪟
           </span>
@@ -75,31 +112,45 @@ export function NiloHome() {
             🪟
           </span>
 
-          <Mascot mood="happy" size={150} hatEmoji={equippedHat?.emoji} glassesEmoji={equippedGlasses?.emoji} />
+          <motion.button
+            onTap={pokeNilo}
+            whileTap={{ scale: 1.08 }}
+            aria-label="Nilo'ya dokun"
+            className="rounded-full"
+          >
+            <Mascot mood={niloMood} size={150} hatEmoji={equippedHat?.emoji} glassesEmoji={equippedGlasses?.emoji} />
+          </motion.button>
 
-          <div className="grid w-full grid-cols-4 gap-3">
-            {decorSlots.map((item, i) =>
-              item ? (
-                <button
-                  key={item.id}
-                  onClick={() => handleToggle(item.id)}
-                  aria-label={`${item.name} eşyasını odadan kaldır`}
-                  className={`flex aspect-square flex-col items-center justify-center rounded-2xl bg-white text-3xl shadow-md transition active:scale-90 ${
-                    item.category === 'decoration' ? 'ring-4 ring-sun-400' : ''
-                  }`}
-                >
-                  {item.emoji}
-                </button>
-              ) : (
-                <div
-                  key={`empty-${i}`}
-                  className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-mint-300 text-mint-300"
-                  aria-hidden
-                >
-                  +
-                </div>
-              ),
-            )}
+          {/* Floor / rug */}
+          <div className="relative flex w-full flex-col items-center gap-3">
+            <div className="h-4 w-full rounded-full bg-coral-300/30" aria-hidden />
+            <div className="grid w-full grid-cols-4 gap-3">
+              {decorSlots.map((item, i) =>
+                item ? (
+                  <motion.button
+                    key={item.id}
+                    onClick={() => handleToggle(item.id)}
+                    whileTap={{ scale: 1.15, rotate: [0, -10, 10, 0] }}
+                    aria-label={`${item.name} eşyasını odadan kaldır`}
+                    className={`flex aspect-square flex-col items-center justify-center rounded-2xl bg-white text-3xl shadow-md ${
+                      item.category === 'decoration' ? 'ring-4 ring-sun-400' : ''
+                    }`}
+                  >
+                    {item.emoji}
+                  </motion.button>
+                ) : (
+                  <div
+                    key={`empty-${i}`}
+                    className={`flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed text-mint-300 transition-colors ${
+                      isDraggingItem ? 'border-sun-400 bg-sun-300/20' : 'border-mint-300'
+                    }`}
+                    aria-hidden
+                  >
+                    +
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         </div>
         {/* Doorstep */}
@@ -120,19 +171,27 @@ export function NiloHome() {
             {ownedItems.map((item) => {
               const placed = progress.placedItemIds.includes(item.id)
               return (
-                <button
+                <motion.button
                   key={item.id}
-                  onClick={() => handleToggle(item.id)}
-                  className={`flex flex-col items-center gap-1 rounded-2xl p-3 shadow-sm transition active:scale-95 ${
+                  onTap={() => handleToggle(item.id)}
+                  drag={!placed}
+                  dragSnapToOrigin
+                  dragElastic={0.15}
+                  dragMomentum={false}
+                  whileDrag={{ scale: 1.15, zIndex: 20 }}
+                  onDragStart={() => setIsDraggingItem(true)}
+                  onDragEnd={(event, info) => handleDragEnd(item, event, info)}
+                  whileTap={placed ? { scale: 1.1, rotate: [0, -8, 8, 0] } : undefined}
+                  className={`flex cursor-grab flex-col items-center gap-1 rounded-2xl p-3 shadow-sm active:cursor-grabbing ${
                     placed ? 'bg-mint-400 text-white' : 'bg-white text-slate-700'
                   } ${item.category === 'decoration' ? 'ring-2 ring-sun-400' : ''}`}
                 >
                   <span className="text-2xl">{item.emoji}</span>
                   <span className="truncate font-body text-xs font-bold">{item.name}</span>
                   <span className="font-body text-[10px] opacity-80">
-                    {placed ? (isWearableCategory(item.category) ? 'Takılı' : 'Odada') : 'Dokun'}
+                    {placed ? (isWearableCategory(item.category) ? 'Takılı' : 'Odada') : 'Sürükle / Dokun'}
                   </span>
-                </button>
+                </motion.button>
               )
             })}
           </div>

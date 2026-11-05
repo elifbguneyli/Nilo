@@ -35,8 +35,14 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'glasses-sun', name: 'Güneş Gözlüğü', emoji: '🕶️', price: 6, category: 'glasses' },
   { id: 'glasses-round', name: 'Yuvarlak Gözlük', emoji: '👓', price: 6, category: 'glasses' },
   { id: 'furniture-bed', name: 'Yatak', emoji: '🛏️', price: 9, category: 'furniture' },
+  { id: 'furniture-computer', name: 'Bilgisayar', emoji: '💻', price: 15, category: 'furniture' },
   { id: 'toy-bear', name: 'Oyuncak Ayı', emoji: '🧸', price: 12, category: 'toy' },
   { id: 'toy-train', name: 'Oyuncak Tren', emoji: '🚂', price: 12, category: 'toy' },
+  { id: 'toy-doll', name: 'Oyuncak Bebek', emoji: '🎎', price: 9, category: 'toy' },
+  { id: 'toy-car', name: 'Oyuncak Araba', emoji: '🚗', price: 9, category: 'toy' },
+  { id: 'toy-robot', name: 'Robot', emoji: '🤖', price: 12, category: 'toy' },
+  { id: 'toy-astronaut', name: 'Astronot', emoji: '👨‍🚀', price: 12, category: 'toy' },
+  { id: 'toy-rocket', name: 'Roket', emoji: '🚀', price: 9, category: 'toy' },
   { id: 'castle', name: 'Özel Şato', emoji: '🏰', price: 20, category: 'decoration' },
 ]
 
