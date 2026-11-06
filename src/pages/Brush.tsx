@@ -6,6 +6,8 @@ import { Mascot } from '../components/Mascot'
 import { StarBurst } from '../components/StarBurst'
 import { ToothShine } from '../components/ToothShine'
 import { BADGES } from '../lib/badges'
+import { todayKey } from '../lib/date'
+import { clearBrushSessionState, loadBrushSessionState, saveBrushSessionState } from '../lib/storage'
 import type { BrushSession } from '../types'
 
 const ZONE_SECONDS = 20
@@ -28,6 +30,12 @@ export function Brush() {
 
   const child = children.find((c) => c.id === childId)
   const validSession = session === 'morning' || session === 'evening'
+
+  const [resumable] = useState(() => {
+    if (!childId || !validSession) return null
+    const saved = loadBrushSessionState(childId, session)
+    return saved && saved.dateKey === todayKey() ? saved : null
+  })
 
   const [phase, setPhase] = useState<Phase>('ready')
   const [zoneIndex, setZoneIndex] = useState(0)
@@ -72,8 +80,20 @@ export function Brush() {
       finishedRef.current = true
       const { starsEarned, newBadgeIds } = completeSession(child.id, session as BrushSession)
       setResult({ stars: starsEarned, badges: newBadgeIds })
+      clearBrushSessionState(child.id, session)
     }
   }, [phase, child, validSession, session, completeSession])
+
+  // Keep progress on disk while brushing so leaving mid-session and coming back
+  // today resumes from the same zone/second instead of restarting from scratch.
+  useEffect(() => {
+    if (phase !== 'brushing' || !child || !validSession) return
+    saveBrushSessionState(child.id, session, { dateKey: todayKey(), zoneIndex, secondsLeft })
+  }, [phase, child, validSession, session, zoneIndex, secondsLeft])
+
+  function handleExit() {
+    if (child) navigate(`/home/${child.id}`)
+  }
 
   if (!child || !validSession) return <Navigate to="/" replace />
 
@@ -82,6 +102,14 @@ export function Brush() {
   const overallPct = Math.min(100, (totalElapsed / totalSeconds) * 100)
 
   if (phase === 'ready') {
+    function handleStart() {
+      if (resumable) {
+        setZoneIndex(resumable.zoneIndex)
+        setSecondsLeft(resumable.secondsLeft)
+      }
+      setPhase('brushing')
+    }
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
         <Mascot mood="idle" size={160} />
@@ -89,18 +117,17 @@ export function Brush() {
           {session === 'morning' ? 'Sabah Fırçalama Zamanı! ☀️' : 'Akşam Fırçalama Zamanı! 🌙'}
         </h1>
         <p className="max-w-sm font-body text-lg text-slate-600">
-          2 dakika boyunca dişlerinin her bölgesini fırçalayacağız. Fırçanı al, hazır olunca başla!
+          {resumable
+            ? 'Kaldığın yerden devam edelim! Fırçanı al, hazır olunca devam et.'
+            : '2 dakika boyunca dişlerinin her bölgesini fırçalayacağız. Fırçanı al, hazır olunca başla!'}
         </p>
         <button
-          onClick={() => setPhase('brushing')}
+          onClick={handleStart}
           className="rounded-full bg-mint-400 px-10 py-4 font-heading text-xl font-bold text-white shadow-lg shadow-mint-400/30 transition active:scale-95"
         >
-          Başla! 🪥
+          {resumable ? 'Devam Et! 🪥' : 'Başla! 🪥'}
         </button>
-        <button
-          onClick={() => navigate(`/home/${child.id}`)}
-          className="font-body text-sm font-semibold text-slate-400 underline"
-        >
+        <button onClick={handleExit} className="font-body text-sm font-semibold text-slate-400 underline">
           Vazgeç
         </button>
       </div>
@@ -112,16 +139,24 @@ export function Brush() {
     const zoneProgress = (ZONE_SECONDS - secondsLeft) / ZONE_SECONDS
     return (
       <div className="relative flex min-h-screen flex-col items-center gap-6 px-6 py-8">
+        <div className="flex w-full max-w-md items-center justify-between">
+          <button
+            onClick={handleExit}
+            className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-500 shadow-sm"
+          >
+            ← Ana Sayfa
+          </button>
+          <p className="font-body font-semibold text-slate-400">
+            Bölge {zoneIndex + 1} / {ZONES.length}
+          </p>
+        </div>
+
         <div className="h-3 w-full max-w-md overflow-hidden rounded-full bg-mint-100">
           <div
             className="h-full rounded-full bg-mint-400 transition-all duration-500"
             style={{ width: `${overallPct}%` }}
           />
         </div>
-
-        <p className="font-body font-semibold text-slate-400">
-          Bölge {zoneIndex + 1} / {ZONES.length}
-        </p>
 
         <div className="relative flex flex-col items-center gap-2">
           <Mascot mood="excited" size={130} />

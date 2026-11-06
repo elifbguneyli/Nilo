@@ -42,3 +42,32 @@ export function saveActiveChildId(id: string | null): void {
   if (id) localStorage.setItem(ACTIVE_CHILD_KEY, id)
   else localStorage.removeItem(ACTIVE_CHILD_KEY)
 }
+
+export interface BrushSessionState {
+  /** yyyy-mm-dd this progress was saved on; a saved state from an earlier day is stale. */
+  dateKey: string
+  zoneIndex: number
+  secondsLeft: number
+}
+
+function brushSessionKey(childId: string, session: string): string {
+  return `nilo:brushSession:${childId}:${session}`
+}
+
+/** Lets a child leave mid-brush and resume from the same zone/second instead of restarting. */
+export function loadBrushSessionState(childId: string, session: string): BrushSessionState | null {
+  try {
+    const raw = localStorage.getItem(brushSessionKey(childId, session))
+    return raw ? (JSON.parse(raw) as BrushSessionState) : null
+  } catch {
+    return null
+  }
+}
+
+export function saveBrushSessionState(childId: string, session: string, state: BrushSessionState): void {
+  localStorage.setItem(brushSessionKey(childId, session), JSON.stringify(state))
+}
+
+export function clearBrushSessionState(childId: string, session: string): void {
+  localStorage.removeItem(brushSessionKey(childId, session))
+}
